@@ -1,0 +1,112 @@
+# Python için .gitignore
+
+# Byte-derlenmiş / optimize edilmiş / DLL dosyaları
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C uzantıları
+*.so
+
+# Dağıtım / paketleme
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Yükleyici logları
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Birim test / kapsam raporları
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
+# Sphinx belgelendirmesi
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+.ipynb_metadata/
+
+# pyenv
+.python-version
+
+# virtualenv
+venv/
+ENV/
+env_name/
+
+# Spyder proje ayarları
+.spyderproject
+.spyproject
+
+# Rope proje ayarları
+.ropeproject
+
+# mkdocs belgelendirmesi
+/site
+
+# mypy
+.mypy_cache/
+
+# IDE dosyaları
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Model dosyaları ve veriseti dosyaları
+*.h5
+*.pt
+*.pth
+*.pkl
+*.bin
+*.onnx
+*.tflite
+*.pb
+data/raw/
+checkpoints/
+
+# Loglar
+logs/
+*.log
+wandb/
+
+# Çevre değişkenleri
+.env
+.envrc
+
+# Büyük dosyalar ve veri setleri
+dataset/
+*.zip
+*.tar.gz
+*.tgz
+*.run
+*.txt
