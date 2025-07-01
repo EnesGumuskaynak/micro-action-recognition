@@ -198,8 +198,10 @@ This project uses the **Yoga-82** dataset, which contains:
 ### Supported Models
 
 - **InternVL3-8B**: Advanced vision-language model with 8B parameters
+- **InternVL3-14B**: Larger version of InternVL3 with 14B parameters
+- **MiniCPM-O**: Optimized compact model for efficient inference
 - **MiniCPM-V**: Compact vision model optimized for efficiency
-- **Qwen2.5-VL**: Latest Qwen vision-language model
+- **Qwen2.5-7BVL**: Latest 7B parameter Qwen vision-language model
 
 ### Recognition Approaches
 
