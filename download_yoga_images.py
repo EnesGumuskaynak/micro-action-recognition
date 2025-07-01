@@ -177,7 +177,7 @@ def main():
     parser.add_argument(
         "--workers",
         type=int,
-        default=10,
+        default=64,
         help="Number of worker threads for parallel downloading (default: 10)",
     )
     args = parser.parse_args()

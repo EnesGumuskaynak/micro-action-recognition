@@ -1,4 +1,4 @@
-"""Görüntü başlıklandırma için yardımcı fonksiyonlar."""
+"""Utility functions for image captioning."""
 
 import math
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
@@ -9,7 +9,7 @@ from torchvision import transforms as T
 from torchvision.transforms.functional import InterpolationMode
 from transformers import AutoConfig, AutoModel, AutoTokenizer
 
-# torchvision.transforms aliası
+# torchvision.transforms alias
 # pylint: disable=invalid-name
 Transforms = T
 
@@ -18,13 +18,13 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
 def build_transform(input_size: int) -> Transforms.Compose:
-    """Verilen giriş boyutuna göre bir torchvision transform oluşturur.
+    """Builds a torchvision transform for the given input size.
 
     Args:
-        input_size: Görüntünün dönüştürüleceği boyut (kare).
+        input_size: Target size for the image transformation (square).
 
     Returns:
-        Bir torchvision.transforms.Compose nesnesi.
+        A torchvision.transforms.Compose object.
     """
     mean, std = IMAGENET_MEAN, IMAGENET_STD
     transform = Transforms.Compose(
@@ -49,17 +49,17 @@ def find_closest_aspect_ratio(
     height: int,
     image_size: int,
 ) -> Tuple[int, int]:
-    """Verilen en boy oranına en yakın hedef en boy oranını bulur.
+    """Finds the closest target aspect ratio to the given aspect ratio.
 
     Args:
-        aspect_ratio: Orijinal görüntünün en boy oranı.
-        target_ratios: Hedef en boy oranları kümesi (genişlik_oranı, yükseklik_oranı).
-        width: Orijinal görüntü genişliği.
-        height: Orijinal görüntü yüksekliği.
-        image_size: Tek bir yamanın boyutu.
+        aspect_ratio: Original image aspect ratio.
+        target_ratios: Set of target aspect ratios (width_ratio, height_ratio).
+        width: Original image width.
+        height: Original image height.
+        image_size: Size of a single patch.
 
     Returns:
-        En iyi eşleşen (genişlik_oranı, yükseklik_oranı) demeti.
+        Best matching (width_ratio, height_ratio) tuple.
     """
     best_ratio_diff = float("inf")
     best_ratio = (1, 1)
@@ -73,14 +73,14 @@ def find_closest_aspect_ratio(
             best_ratio_diff = ratio_diff
             best_ratio = (ratio_w, ratio_h)
         elif ratio_diff == best_ratio_diff:
-            # Eşitlik durumunda, orijinal koddaki bu koşul vardı ancak içi boştu.
-            # Bu, genellikle ek bir sezgisel yöntemin (örn. daha büyük yama sayısı tercihi)
-            # uygulanabileceği anlamına gelir. Şimdilik, ilk bulunan en iyi oranı koruyoruz.
-            # Orijinal kodda bu if bloğunun içi boştu:
+            # In case of equality, this condition existed in the original code but was empty.
+            # This usually means additional heuristic methods (e.g., preference for larger patch count)
+            # could be applied. For now, we keep the first best ratio found.
+            # In the original code, this if block was empty:
             # `if area > 0.5 * image_size * image_size * ratio_w * ratio_h:`
-            # Bu nedenle burada bir `pass` kullanıyoruz.
+            # Therefore, we use a `pass` here.
             if area > 0.5 * image_size * image_size * ratio_w * ratio_h:
-                pass  # Orijinal kodda bu blok boştu
+                pass  # Original code had this block empty
     return best_ratio
 
 
@@ -91,17 +91,17 @@ def dynamic_preprocess(
     image_size: int = 448,
     use_thumbnail: bool = False,
 ) -> List[Image.Image]:
-    """Görüntüyü dinamik olarak en boy oranına göre yeniden boyutlandırır ve böler.
+    """Dynamically resizes and splits the image based on aspect ratio.
 
     Args:
-        image: İşlenecek PIL.Image nesnesi.
-        min_num: Minimum yama sayısı.
-        max_num: Maksimum yama sayısı.
-        image_size: Her bir yamanın hedef boyutu.
-        use_thumbnail: Küçük resim eklenip eklenmeyeceği.
+        image: PIL.Image object to be processed.
+        min_num: Minimum number of patches.
+        max_num: Maximum number of patches.
+        image_size: Target size for each patch.
+        use_thumbnail: Whether to add a thumbnail.
 
     Returns:
-        İşlenmiş PIL.Image nesnelerinin bir listesi.
+        A list of processed PIL.Image objects.
     """
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
@@ -113,9 +113,9 @@ def dynamic_preprocess(
         if n_patches % i == 0
         for j in [n_patches // i]
         if i * j <= max_num and i * j >= min_num
-    )  # i*j kontrolü eklendi
+    )  # i*j check added
 
-    # (i,j) ve (j,i) varyasyonlarını ekle
+    # Add (i,j) and (j,i) variations
     additional_ratios = set()
     for r_w, r_h in target_ratios:
         additional_ratios.add((r_w, r_h))
@@ -152,15 +152,15 @@ def dynamic_preprocess(
 def load_image(
     image_file: str, input_size: int = 448, max_num: int = 12
 ) -> torch.Tensor:
-    """Bir görüntü dosyasını yükler, işler ve tensöre dönüştürür.
+    """Loads an image file, processes it, and converts it to tensor.
 
     Args:
-        image_file: Görüntü dosyasının yolu.
-        input_size: Görüntü yamalarının boyutu.
-        max_num: Maksimum yama sayısı.
+        image_file: Path to the image file.
+        input_size: Size of image patches.
+        max_num: Maximum number of patches.
 
     Returns:
-        İşlenmiş görüntü yamalarını içeren bir torch.Tensor.
+        A torch.Tensor containing processed image patches.
     """
     image = Image.open(image_file).convert("RGB")
     transform = build_transform(input_size=input_size)
@@ -175,21 +175,21 @@ def load_image(
 def split_model_internvl(
     model_name_or_path: str, world_size: Optional[int] = None
 ) -> Dict[str, int]:
-    """InternVL modeli için özel bir aygıt haritası oluşturur.
+    """Creates a custom device map for InternVL model.
 
-    Bu fonksiyon, InternVL model mimarisine özgüdür.
+    This function is specific to the InternVL model architecture.
 
     Args:
-        model_name_or_path: Model adı veya yolu.
-        world_size: Kullanılacak GPU sayısı. None ise otomatik olarak algılanır.
+        model_name_or_path: Model name or path.
+        world_size: Number of GPUs to use. If None, automatically detected.
 
     Returns:
-        Katman adlarından aygıt kimliklerine bir eşleme sözlüğü.
+        A mapping dictionary from layer names to device IDs.
     """
     if world_size is None:
         world_size = torch.cuda.device_count() if torch.cuda.is_available() else 1
 
-    if world_size == 1:  # Tek GPU veya CPU durumu
+    if world_size == 1:  # Single GPU or CPU case
         return {"": "cuda:0" if torch.cuda.is_available() else "cpu"}
 
     device_map: Dict[str, int] = {}
@@ -198,31 +198,31 @@ def split_model_internvl(
         if not hasattr(config, "llm_config") or not hasattr(
             config.llm_config, "num_hidden_layers"
         ):
-            # print("Uyarı: Model yapılandırması beklenen InternVL formatında değil. 'auto' device_map kullanılacak.")
+            # print("Warning: Model configuration is not in expected InternVL format. 'auto' device_map will be used.")
             return "auto"  # type: ignore[return-value]
 
         num_layers = config.llm_config.num_hidden_layers
-        # İlk GPU ViT için kullanılacağından, yarım GPU olarak kabul edilir.
+        # Since the first GPU will be used for ViT, it's considered as half GPU.
         num_layers_per_gpu_float = num_layers / (world_size - 0.5)
 
         num_layers_on_first_gpu = math.ceil(num_layers_per_gpu_float * 0.5)
         num_layers_on_other_gpus = math.ceil(num_layers_per_gpu_float)
 
         layer_cnt = 0
-        # vision_model ve mlp1 ilk GPU'ya (0)
+        # vision_model and mlp1 to first GPU (0)
         device_map["vision_model"] = 0
         device_map["mlp1"] = 0
 
-        # Dil modelinin gömme katmanları ilk GPU'ya
-        # Bu katman adları modele göre değişebilir, genel bir varsayım yapılıyor.
-        # Gerçek InternVL modelindeki kesin adlara göre ayarlanmalıdır.
-        # Örnek adlar: language_model.model.tok_embeddings, language_model.model.embed_tokens
-        # Bu adlar AutoConfig'den dinamik olarak alınabilirse daha iyi olur.
-        # Şimdilik, bu katmanların var olduğunu ve ilk GPU'ya yerleştirileceğini varsayıyoruz.
-        # Eğer modelde bu katmanlar yoksa veya adları farklıysa, device_map'te görünmeyeceklerdir.
-        # Bu genellikle sorun yaratmaz, çünkü from_pretrained kalanları otomatik olarak yerleştirir.
+        # Language model embedding layers to first GPU
+        # These layer names may vary by model, making a general assumption.
+        # Should be adjusted according to exact names in actual InternVL model.
+        # Example names: language_model.model.tok_embeddings, language_model.model.embed_tokens
+        # It would be better if these names could be dynamically obtained from AutoConfig.
+        # For now, we assume these layers exist and will be placed on the first GPU.
+        # If these layers don't exist in the model or have different names, they won't appear in device_map.
+        # This usually doesn't cause problems, as from_pretrained automatically places the rest.
 
-        # LLM katmanlarının dağıtımı
+        # Distribution of LLM layers
         current_gpu_idx = 0
         layers_on_current_gpu = (
             num_layers_on_first_gpu
@@ -233,42 +233,42 @@ def split_model_internvl(
         for i in range(num_layers):
             if layers_on_current_gpu == 0:
                 current_gpu_idx += 1
-                if current_gpu_idx >= world_size:  # GPU'lar biterse sonuncuya ata
+                if current_gpu_idx >= world_size:  # If GPUs run out, assign to last one
                     current_gpu_idx = world_size - 1
                 layers_on_current_gpu = num_layers_on_other_gpus
 
             device_map[f"language_model.model.layers.{i}"] = current_gpu_idx
             layers_on_current_gpu -= 1
 
-        # Kalan önemli katmanlar (genellikle son GPU'ya veya ilk GPU'ya)
-        # Bu da modele özgüdür. InternVL'nin yapısına göre ayarlanmalıdır.
-        # Örnek: language_model.model.norm, language_model.lm_head
-        # Genellikle, belirtilmeyen katmanlar `device_map="auto"` mantığıyla yerleştirilir
-        # veya `device_map` sözlüğünde olmayanlar ilk cihaza (genellikle 0) atanır.
-        # Bu nedenle, tüm katmanları burada belirtmek zorunlu olmayabilir.
-        # Ancak, InternVL'nin orijinal `split_model` fonksiyonu bazılarını belirtir.
+        # Remaining important layers (usually to last GPU or first GPU)
+        # This is also model-specific. Should be adjusted according to InternVL's structure.
+        # Example: language_model.model.norm, language_model.lm_head
+        # Usually, unspecified layers are placed with `device_map="auto"` logic
+        # or those not in `device_map` dictionary are assigned to first device (usually 0).
+        # Therefore, it may not be mandatory to specify all layers here.
+        # However, InternVL's original `split_model` function specifies some of them.
 
-        # Örnek olarak, bazı son katmanları son kullanılan GPU'ya veya ilk GPU'ya atayalım.
-        final_gpu_idx = current_gpu_idx  # Son katmanların yerleştirildiği GPU
+        # As an example, let's assign some final layers to the last used GPU or first GPU.
+        final_gpu_idx = current_gpu_idx  # GPU where final layers are placed
 
-        # Bu katmanların varlığı ve adları modele göre değişir.
-        # `language_model.model.tok_embeddings` gibi katmanlar genellikle başa konur.
-        # `language_model.output` veya `language_model.lm_head` gibi katmanlar sona konur.
-        # InternVL'nin orijinal `split_model` fonksiyonundaki mantığı yansıtmaya çalışalım:
+        # The existence and names of these layers vary by model.
+        # Layers like `language_model.model.tok_embeddings` are usually placed at the beginning.
+        # Layers like `language_model.output` or `language_model.lm_head` are placed at the end.
+        # Let's try to reflect the logic from InternVL's original `split_model` function:
         device_map["language_model.model.tok_embeddings"] = 0
-        device_map["language_model.model.embed_tokens"] = 0  # Bazen bu kullanılır
-        device_map["language_model.output"] = final_gpu_idx  # Veya lm_head
+        device_map["language_model.model.embed_tokens"] = 0  # Sometimes this is used
+        device_map["language_model.output"] = final_gpu_idx  # Or lm_head
         device_map["language_model.lm_head"] = final_gpu_idx
         device_map["language_model.model.norm"] = final_gpu_idx
-        # Rotary embeddings genellikle her katmanda yeniden oluşturulur veya paylaşılır,
-        # bu nedenle doğrudan bir cihaza atanmaz.
-        # device_map[f"language_model.model.layers.{num_layers - 1}"] = final_gpu_idx # Zaten döngüde atanmış olmalı
+        # Rotary embeddings are usually recreated or shared in each layer,
+        # so they are not directly assigned to a device.
+        # device_map[f"language_model.model.layers.{num_layers - 1}"] = final_gpu_idx # Should already be assigned in the loop
 
     except Exception as e:
-        # print(f"InternVL için özel aygıt haritası oluşturulurken hata: {e}. 'auto' kullanılacak.")
+        # print(f"Error creating custom device map for InternVL: {e}. 'auto' will be used.")
         return "auto"  # type: ignore[return-value]
 
-    # print(f"Oluşturulan InternVL aygıt haritası: {device_map}")
+    # print(f"Generated InternVL device map: {device_map}")
     return device_map
 
 
@@ -281,35 +281,35 @@ def load_model_and_tokenizer(
     trust_remote_code: bool = True,
     low_cpu_mem_usage: bool = True,
 ) -> Tuple[AutoModel, AutoTokenizer]:
-    """Verilen parametrelerle bir modeli ve tokenizer'ı yükler.
+    """Loads a model and tokenizer with the given parameters.
 
     Args:
-        model_name_or_path: Model adı veya Hugging Face Hub yolu.
-        torch_dtype_str: Kullanılacak torch veri türü (örn. "bfloat16", "float16", "float32").
-        load_in_8bit: Modelin 8-bit olarak yüklenip yüklenmeyeceği.
-        use_flash_attn: Flash Attention kullanılıp kullanılmayacağı.
-        device_map: Aygıt eşleme stratejisi ("auto", "balanced", "none") veya özel bir sözlük.
-        trust_remote_code: Uzak kodun güvenilip güvenilmeyeceği.
-        low_cpu_mem_usage: Düşük CPU bellek kullanımı etkinleştirilip etkinleştirilmeyeceği.
+        model_name_or_path: Model name or Hugging Face Hub path.
+        torch_dtype_str: Torch data type to use (e.g., "bfloat16", "float16", "float32").
+        load_in_8bit: Whether to load the model in 8-bit.
+        use_flash_attn: Whether to use Flash Attention.
+        device_map: Device mapping strategy ("auto", "balanced", "none") or a custom dictionary.
+        trust_remote_code: Whether to trust remote code.
+        low_cpu_mem_usage: Whether to enable low CPU memory usage.
 
     Returns:
-        (model, tokenizer) içeren bir demet.
+        A tuple containing (model, tokenizer).
 
     Raises:
-        ValueError: Geçersiz torch_dtype_str sağlanırsa.
+        ValueError: If an invalid torch_dtype_str is provided.
     """
     if hasattr(torch, torch_dtype_str):
         dtype = getattr(torch, torch_dtype_str)
     else:
         raise ValueError(
-            f"Geçersiz torch_dtype_str: {torch_dtype_str}. "
-            f"torch.{torch_dtype_str} bulunamadı."
+            f"Invalid torch_dtype_str: {torch_dtype_str}. "
+            f"torch.{torch_dtype_str} not found."
         )
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_name_or_path,
         trust_remote_code=trust_remote_code,
-        use_fast=False,  # InternVL orijinalinde use_fast=False idi
+        use_fast=False,  # use_fast=False in original InternVL
     )
 
     model_kwargs = {
@@ -319,19 +319,19 @@ def load_model_and_tokenizer(
         "trust_remote_code": trust_remote_code,
         "device_map": device_map,
     }
-    # use_flash_attn sadece bazı modeller ve transformers versiyonları tarafından desteklenir.
-    # Desteklenmiyorsa hata vermemesi için koşullu ekleme yapalım.
+    # use_flash_attn is only supported by some models and transformers versions.
+    # Let's add it conditionally so it doesn't error if not supported.
     if use_flash_attn:
-        # Flash Attention 2 için `attn_implementation="flash_attention_2"` kullanılır.
-        # `use_flash_attn` eski bir parametre olabilir.
-        # Yeni HF versiyonları `attn_implementation` bekler.
-        # Şimdilik, eğer model config'i destekliyorsa ekleyelim.
-        # Ya da doğrudan `attn_implementation` olarak geçelim.
-        # InternVL `use_flash_attn=True` kullanıyordu, bu muhtemelen modelin kendi argümanı.
-        model_kwargs["use_flash_attn"] = True  # InternVL'nin kullandığı gibi
+        # For Flash Attention 2, `attn_implementation="flash_attention_2"` is used.
+        # `use_flash_attn` might be an older parameter.
+        # New HF versions expect `attn_implementation`.
+        # For now, if the model config supports it, let's add it.
+        # Or pass it directly as `attn_implementation`.
+        # InternVL used `use_flash_attn=True`, this is probably the model's own argument.
+        model_kwargs["use_flash_attn"] = True  # As used by InternVL
 
     model = AutoModel.from_pretrained(model_name_or_path, **model_kwargs)  # type: ignore[arg-type]
 
-    model.eval()  # Modeli değerlendirme moduna al
+    model.eval()  # Set model to evaluation mode
 
     return model, tokenizer

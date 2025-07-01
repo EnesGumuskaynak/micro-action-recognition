@@ -110,3 +110,9 @@ dataset/
 *.tgz
 *.run
 *.txt
+*.csv
+
+# Yoga class json files (allow tracking)
+!Yoga-82/class_6.json
+!Yoga-82/class_20.json
+!Yoga-82/class_82.json
