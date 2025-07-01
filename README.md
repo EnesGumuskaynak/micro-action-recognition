@@ -47,7 +47,14 @@ chmod +x install.sh
 ./install.sh
 ```
 
-3. Download the Yoga-82 dataset (if not already available):
+3. Request access and prepare the Yoga-82 dataset:
+
+   - Visit the official [Yoga-82 dataset page](https://sites.google.com/view/yoga-82/home)
+   - Fill out the request form to obtain permission to download the dataset.
+   - After receiving access, download the dataset files provided by the authors.
+   - Move all downloaded files and folders into the `Yoga-82` directory in your project root (so that image links and train/test splits are under `Yoga-82/`).
+
+4. Download the Yoga-82 dataset (if not already available):
 
 ```bash
 python download_yoga_images.py
